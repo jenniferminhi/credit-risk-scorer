@@ -1,13 +1,14 @@
 """
-Scores companies on how safely they can carry their debt, and gives each one a
-grade from AAA down to B. A simplified version of what a credit ratings agency does.
+Works out whether a company can afford the money it has borrowed, and gives it a
+grade from AAA (safest) down to B (weakest). A simple version of what a credit
+ratings agency does.
 
 Run it with: python3 score.py
 """
 
 import pandas as pd
 import matplotlib
-matplotlib.use("Agg")   # save charts to a file instead of opening a window
+matplotlib.use("Agg")   # save the chart as a picture file instead of opening a window
 import matplotlib.pyplot as plt
 
 
@@ -16,7 +17,8 @@ def load_companies(path="data/companies.csv"):
 
 
 def add_ratios(df):
-    # take the cash off first. if you hold more cash than debt you are not really in debt
+    # subtract the cash the company already has. owing 120 while holding 540 in the
+    # bank is not really being in debt
     df["net_debt_m"] = df["total_debt_m"] - df["cash_m"]
     df["interest_cover"] = df["operating_profit_m"] / df["interest_expense_m"]
     df["net_debt_to_profit"] = df["net_debt_m"] / df["operating_profit_m"]
@@ -26,10 +28,10 @@ def add_ratios(df):
 
 
 def band_score(value, thresholds, higher_is_better):
-    """Turn a ratio into a score from 1 (weakest) to 5 (strongest)."""
+    """Give a number a score out of 5. 5 is strongest, 1 is weakest."""
     if pd.isna(value):
         return 1
-    # check the bars from best to worst and stop at the first one cleared
+    # go through the bars from highest to lowest and stop at the first one it clears
     for score, cut in zip([5, 4, 3, 2], thresholds):
         if (higher_is_better and value >= cut) or (not higher_is_better and value <= cut):
             return score
@@ -37,7 +39,8 @@ def band_score(value, thresholds, higher_is_better):
 
 
 def score_companies(df):
-    # i picked these bands myself. 8 times cover looked comfortable, under 1.5 looked like trouble
+    # i chose these bars myself. covering your interest 8 times over looked safe,
+    # under 1.5 times looked like trouble
     df["s_interest_cover"] = df["interest_cover"].apply(
         band_score, thresholds=[8, 5, 3, 1.5], higher_is_better=True)
     df["s_net_debt"] = df["net_debt_to_profit"].apply(
@@ -47,8 +50,8 @@ def score_companies(df):
     df["s_gearing"] = df["debt_to_equity"].apply(
         band_score, thresholds=[0.5, 1.0, 1.75, 2.5], higher_is_better=False)
 
-    # interest cover and net debt count more because they show whether the company can pay.
-    # margin and gearing only describe the business, they dont tell you about repaying
+    # the first two count more because they show whether the company can pay what it owes.
+    # the other two only show whether it is a good business, which is a different question
     df["total_score"] = (
         df["s_interest_cover"] * 0.30
         + df["s_net_debt"] * 0.30
@@ -58,6 +61,8 @@ def score_companies(df):
     return df
 
 
+# turn the score out of 5 into a rating. checked from the top down, and the first
+# one that fits is the answer
 def to_grade(score):
     if score >= 4.5:
         return "AAA"
@@ -74,6 +79,7 @@ def to_grade(score):
 
 def make_chart(df, path="output/risk_chart.png"):
     ordered = df.sort_values("total_score")
+    # red if the score is low, orange in the middle, green if high
     colours = ["#c0392b" if s < 2.8 else "#e67e22" if s < 3.5 else "#27ae60"
                for s in ordered["total_score"]]
 
@@ -89,6 +95,8 @@ def make_chart(df, path="output/risk_chart.png"):
     print(f"Chart saved to {path}")
 
 
+# this is the whole program in order: load the data, work out the ratios, score them,
+# grade them, put the best first, then save and draw the chart
 def main():
     df = load_companies()
     df = add_ratios(df)
