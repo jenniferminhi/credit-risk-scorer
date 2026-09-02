@@ -16,6 +16,7 @@ def load_companies(path="data/companies.csv"):
 
 
 def add_ratios(df):
+    # take the cash off first. if you hold more cash than debt you are not really in debt
     df["net_debt_m"] = df["total_debt_m"] - df["cash_m"]
     df["interest_cover"] = df["operating_profit_m"] / df["interest_expense_m"]
     df["net_debt_to_profit"] = df["net_debt_m"] / df["operating_profit_m"]
@@ -36,6 +37,7 @@ def band_score(value, thresholds, higher_is_better):
 
 
 def score_companies(df):
+    # i picked these bands myself. 8 times cover looked comfortable, under 1.5 looked like trouble
     df["s_interest_cover"] = df["interest_cover"].apply(
         band_score, thresholds=[8, 5, 3, 1.5], higher_is_better=True)
     df["s_net_debt"] = df["net_debt_to_profit"].apply(
@@ -45,8 +47,8 @@ def score_companies(df):
     df["s_gearing"] = df["debt_to_equity"].apply(
         band_score, thresholds=[0.5, 1.0, 1.75, 2.5], higher_is_better=False)
 
-    # interest cover and net debt count double, because they are the two that
-    # answer whether the company can actually afford what it owes
+    # interest cover and net debt count more because they show whether the company can pay.
+    # margin and gearing only describe the business, they dont tell you about repaying
     df["total_score"] = (
         df["s_interest_cover"] * 0.30
         + df["s_net_debt"] * 0.30
