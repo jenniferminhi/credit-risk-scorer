@@ -1,48 +1,50 @@
 # Credit Risk Scorer
 
-A Python tool that reads company financials, calculates the ratios a credit analyst
-uses, and assigns each company a rating band from **AAA** down to **B**.
-
-It is a simplified version of what a credit ratings agency does: judge how likely a
-borrower is to repay what it has borrowed, and grade it accordingly.
+A Python tool that reads company financials, works out whether each company can afford
+its debt, and grades it from AAA down to B.
 
 ![Credit risk scores by company](output/risk_chart.png)
 
 ## Why I built it
 
 I spent a week on a work experience programme at Fitch Group, where I researched and
-presented on how credit ratings work. Fitch judges whether a company can repay its debt
-and grades it from AAA down to D, and a downgrade makes borrowing more expensive for
-that company.
+presented on how credit ratings work. Fitch assesses whether a company can repay its
+debts and grades it from AAA down to D, and a downgrade makes it harder and more
+expensive for that company to borrow.
 
-I wanted to understand that properly rather than just describe it, so I rebuilt a
-simplified version of the judgement in code. Writing the scoring rules forced me to
-decide what actually makes a company risky, and how much weight each measure deserves.
+I didn't want to just explain how ratings work, so I built a simplified version of the
+assessment in code. Writing down the scoring criteria meant deciding what actually makes
+a company risky and how much each factor should count. That turned out to be a judgement
+call rather than a formula.
 
-I am a BTEC Engineering student with no coding on my syllabus, so this was also my first
-Python project.
+This is my first Python project. I study a BTEC in Engineering, which has no coding on it.
 
 ## What it does
 
-1. Reads company financials from `data/companies.csv`
-2. Calculates four ratios:
-   - **Interest cover** — how many times operating profit covers the interest bill
-   - **Net debt to profit** — how many years of profit it would take to clear the debt
-   - **Operating margin** — profit earned per pound of sales
-   - **Debt to equity** — how much is borrowed against what the owners put in
-3. Scores each ratio from 1 to 5 against threshold bands
-4. Combines them into one weighted score, weighting the two debt-affordability measures
-   most heavily at 30% each, because they answer the question the rating is actually asking
-5. Maps the score onto a rating band and outputs a ranked table, a CSV and a chart
+It reads a CSV of company financials and calculates four ratios:
 
-## How to run it
+- **Interest cover** — operating profit divided by the annual interest bill. How many
+  times over the company's earnings cover what it owes its lenders
+- **Net debt to profit** — debt minus cash, divided by profit. Roughly how many years of
+  profit it would take to clear the debt
+- **Operating margin** — how much profit the company keeps from each pound of sales
+- **Debt to equity** — how much is borrowed against what the owners put in
+
+Each ratio scores 1 to 5 against threshold bands. The scores combine into one weighted
+number, which becomes a rating band.
+
+Interest cover and net debt count 30% each; margin and gearing 20% each. I weighted it
+that way because the first two answer whether the company can afford what it owes, and
+the other two only describe the business.
+
+## Running it
 
 ```bash
 pip install pandas matplotlib
 python3 score.py
 ```
 
-## Example output
+## Output
 
 ```
 CREDIT RISK SCORECARD
@@ -56,32 +58,21 @@ Example Industrials plc            1.64               10.47              0.07   
 ==============================================================================
 ```
 
-Note the software company scores AAA on negative net debt — it holds more cash than debt,
-so there is nothing to struggle to repay. The airline scores B because its profit barely
-covers its interest bill.
+The software company's net debt is negative because it holds more cash than debt, so
+there is nothing for it to struggle to repay. The airline covers its interest bill only
+1.23 times, so one bad year and it can't pay.
 
 ## The data
 
-`data/companies.csv` currently holds **example figures for illustration**, not real
-companies. To run it on real businesses, replace the rows with published figures from
-company annual reports, which are free on any listed company's investor relations page.
+`data/companies.csv` holds example figures, not real companies. To run it on real
+businesses, replace the rows with published figures from annual reports.
 
 Columns needed, all in millions:
 `company, revenue_m, operating_profit_m, total_debt_m, cash_m, interest_expense_m, equity_m`
 
-## What I would add next
+## What I'd change next
 
-- Pull financials automatically rather than entering them by hand
-- Weight the scoring differently by sector, since a utility can safely carry more debt
-  than an airline
-- Track how a company's score moves across several years, which is closer to how a real
-  rating is reviewed
-
-## What I learned
-
-- How the ratios behind a credit rating actually work, and why interest cover matters
-  more than the size of the debt on its own
-- Reading a CSV into pandas, calculating new columns from existing ones, and sorting
-- Writing functions that do one job each, so the scoring rules can be changed without
-  touching the rest
-- Producing a chart from data and saving it as a file
+The thresholds should really vary by sector. A utility with regulated income can carry
+much more debt than an airline, but at the moment both are judged against the same bars.
+I'd also want to track a company's score across several years, since a rating is reviewed
+over time rather than set once.
